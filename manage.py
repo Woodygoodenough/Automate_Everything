@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/projects/automate_everything/Automate_Everything/venv/bin/python
 """Django's command-line utility for administrative tasks."""
 import os
 import sys
