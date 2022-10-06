@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>请输入报销信息</title>
+</head>
+{% extends 'main/home.html' %}
+<body>
+    {% block content %}
+        <p>招待单位：{{confirmed_company}}</p>
+        <p>招待事宜：{{field}}</p>
+        <p>招待人员：{{clients}}</p>
+        <p>接待人数：{{hosts}}</p>
+        <p>招待人数：{{guests}}</p>
+        <p>总金额：{{amount}}</p>
+        <p>人均金额：{{ave_amount}}</p>
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit" name="confirm_and_download">确认并下载附件</button>
+            <button type="submit" name="reroll_info">重新随机生成</button>
+        </form>
+    {% endblock content %}
+</body>
+</html>

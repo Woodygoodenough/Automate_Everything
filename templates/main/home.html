@@ -1,0 +1,61 @@
+{% load bootstrap4 %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>机构投资管理部超级协调</title>
+    {% bootstrap_css %}
+    {% bootstrap_javascript jquery='full' %}
+</head>
+<body>
+    <nav class="navbar navbar-expand-md navbar-light bg-light mb-4 border">
+
+        <a class="navbar-brand" href="{% url 'home' %}">超级协同主页</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse"
+           data-target="#navbarCollapse" aria-controls="navbarCollapse"
+           aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav mr-auto">
+            <li class="nav-item">
+               <a class="nav-link" href="{% url 'invoice_reimbursement:reim_greeting' %}"> 发票报销 </a>
+            </li>
+            </ul>
+            <ul class="navbar-nav ml-auto">
+                {% if user.is_authenticated %}
+                <!-- In Django’s authentication system, every template has a user variable available. -->
+                    <li class="nav-item">
+                        <span class="navbar-text"> Have a good day, {{ user.username }}. </span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'users:logout' %}">登出</a>
+                    </li>
+                {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'users:login' %}">登录</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'users:register' %}">注册</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </div>
+
+    </nav>
+    <main role="main" class="container">
+    <div class="pb-2 mb-2 border-bottom">
+    </div>
+    </main>
+    {% block page_header %}
+        <div class="jumbotron">
+            <h1 class="display-3">欢迎访问机构投资管理部超级协同</h1>
+            <p class="lead">精简工作，减少冗余，将精力留给更重要的事务</p>
+            <a class="btn btn-lg btn-primary" href="{% url 'users:register' %}"role="button">注册 &raquo;</a>
+        </div>
+    {% endblock page_header %}
+    {% block content %}{% endblock content %}
+</body>
+</html>
