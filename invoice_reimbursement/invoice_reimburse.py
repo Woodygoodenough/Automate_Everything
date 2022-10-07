@@ -9,14 +9,18 @@ from random import randint, sample
 from docx import Document
 
 
-class InvoiceReimburse():
+class InvoiceReimburse:
     def __init__(self, reim_input):
         self.wb = load_workbook("C:/Users/13554/OneDrive/pythonproject/Report_Automation/test_excel/联系人名单.xlsx")
         self.ws = self.wb.active
         self.invoice_info = reim_input
         self.invoice_info['amount'] = float(self.invoice_info['amount'])
-        self.invoice_info['preset_number'] = int(self.invoice_info['preset_number'])
-
+        self.base_multiplpe_dict = {
+            '工作招待': 1,
+            '一般招待': 2,
+            '商务招待': 3,
+        }
+        self.base_multiplpe = self.base_multiplpe_dict[self.invoice_info['dining_type']]
         self.unpack_excel()
 
 
@@ -84,6 +88,7 @@ class InvoiceReimburse():
         print("人均金额：" + self.ave_amount_str)
         print("________________________")
         """
+
         return {
             'confirmed_company': self.confirmed_company,
             'field': self.field,
@@ -99,12 +104,12 @@ class InvoiceReimburse():
         """
         take in preset number of diners_num if there is any, and generate the number of diners for the hosts and guests
         """
-        if self.invoice_info['preset_flag']:
+        if self.invoice_info['preset_number']:
             print('存在设定的用餐人数')
             self.diners = self.invoice_info['preset_number']
         else:
-            min_number = max(2, math.ceil(self.invoice_info['amount'] / 200))
-            max_number = min(max(2, int(self.invoice_info['amount'] // 135)), 6)
+            min_number = max(2, math.ceil(self.invoice_info['amount'] / (200*self.base_multiplpe)))
+            max_number = min(max(2, int(self.invoice_info['amount'] // (140*self.base_multiplpe))), 6)
             self.diners = randint(min_number, max_number)
             """
             print('不存在设定的用餐人数，自动产生用餐人数')
@@ -144,9 +149,16 @@ class InvoiceReimburse():
             self.clients_dict[row[0]].append([name, depar, position, field])
 
 if __name__ == '__main__':
-    ir = InvoiceReimburse()
+    reim_input = {
+        'amount': 3000,
+        'restaurant': '好吃的餐厅',
+        'date': '2022-10-07',
+        'preset_number': None,
+        'dining_type': '商务招待',
+    }
+    ir = InvoiceReimburse(reim_input)
     ir.who_to_dine()
-    ir.attachment_gen()
+    # ir.attachment_gen()
 
 
 

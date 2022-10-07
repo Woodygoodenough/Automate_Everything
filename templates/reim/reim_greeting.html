@@ -11,8 +11,8 @@
         {% csrf_token %}
         {{ amount_form.as_p }}
         {{ restaurant_form.as_p }}
+        {{ diningtype_form.as_p }}
         {{ date_form.as_p }}
-        {{ presetflag_form }}
         {{ presetnumber_form }}
         <input type = "submit" value = "Submit">
     </form>
