@@ -20,9 +20,6 @@ def reim_greeting(request):
         presetnumber_form = PresetNumberForm()
     else:
         # Post data submitted
-        print("______________________________________________")
-        print(request.POST)
-        print("______________________________________________")
         amount_form = AmountForm(data=request.POST)
         restaurant_form = RestaurantForm(data=request.POST)
         diningtype_form = DiningTypeForm(data=request.POST)
@@ -63,10 +60,11 @@ def reim_outcome(request, reim_input):
     redirect to download page
     """
     reim_input = parse_qs(reim_input, keep_blank_values=True)
-    #  parsing a percent encoded query string into a dict, while the values are lists, so lists should be converted to
-    #  strings first
+    #  parsing a percent encoded query string into a dict, because the values are lists even for a single value, so
+    #  lists should be converted to strings first for single value.
     for key in reim_input:
         reim_input[key] = reim_input[key][0]
+    #  The reroll of outcome is done by recreating InvoiceReimburse instances
     ir = InvoiceReimburse(reim_input)
     context = ir.who_to_dine()
     if 'confirm_and_download' in request.POST:
@@ -78,6 +76,10 @@ def reim_outcome(request, reim_input):
 
     return render(request, 'reim/reim_outcome.html', context)
 
+"""
+@login_required
+def reim_client_info_input(request):
+"""
 
 
 

@@ -24,7 +24,7 @@ class DateForm(forms.Form):
 
 
 class PresetNumberForm(forms.Form):
-    preset_number = forms.IntegerField(required=False)
+    preset_number = forms.IntegerField(required=False, min_value = 2)
 
 
 class ConfirmForm(forms.Form):

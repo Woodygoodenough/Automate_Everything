@@ -6,6 +6,7 @@
 </head>
 {% extends 'main/home.html' %}
 <body>
+    {% block page_header %}{% endblock page_header %}
     {% block content %}
         <p>招待单位：{{confirmed_company}}</p>
         <p>招待事宜：{{field}}</p>

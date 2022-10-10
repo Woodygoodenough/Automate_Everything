@@ -5,17 +5,18 @@
     <title>请输入报销信息</title>
 </head>
 <body>
-{% extends "main/home.html" %}
-{% block content %}
-    <form method="POST">
-        {% csrf_token %}
-        {{ amount_form.as_p }}
-        {{ restaurant_form.as_p }}
-        {{ diningtype_form.as_p }}
-        {{ date_form.as_p }}
-        {{ presetnumber_form }}
-        <input type = "submit" value = "Submit">
-    </form>
-{% endblock content %}
+    {% extends "main/home.html" %}
+    {% block page_header %}{% endblock page_header %}
+    {% block content %}
+        <form method="POST">
+            {% csrf_token %}
+            {{ amount_form.as_p }}
+            {{ restaurant_form.as_p }}
+            {{ diningtype_form.as_p }}
+            {{ date_form.as_p }}
+            {{ presetnumber_form }}
+            <input type = "submit" value = "Submit">
+        </form>
+    {% endblock content %}
 </body>
 </html>

@@ -4,24 +4,29 @@ This script is the prototype of invoice reimbursement automation for everbright 
 """
 import math
 
-from openpyxl import workbook, load_workbook
-from random import randint, sample
+from random import randint, sample, choice
 from docx import Document
+from .models import CompanyReim, ClientReim, FieldReim
 
 
 class InvoiceReimburse:
     def __init__(self, reim_input):
-        self.wb = load_workbook("C:/Users/13554/OneDrive/pythonproject/Report_Automation/test_excel/联系人名单.xlsx")
-        self.ws = self.wb.active
         self.invoice_info = reim_input
         self.invoice_info['amount'] = float(self.invoice_info['amount'])
+
+        #  set the multiple of average dining fee base based on dining type
         self.base_multiplpe_dict = {
             '工作招待': 1,
             '一般招待': 2,
             '商务招待': 3,
         }
         self.base_multiplpe = self.base_multiplpe_dict[self.invoice_info['dining_type']]
-        self.unpack_excel()
+
+        #  initialize class attributes
+        self.clients_str = ''  # readable clients string
+        self.guests = 0  # number of guests
+        self.avai_com_objs = []  # a list of CompanyReim objects, the company in which has more clients than self.guests
+        self.table = ''  #  the table instance generated using docx.Document.tables in the word attachment
 
 
     def attachment_gen(self):
@@ -58,21 +63,28 @@ class InvoiceReimburse:
         return a dict for page display of reimbursement info
         """
         self.diners_num()
-        self.clients_str = ''
-        avai_com = self.avai_com()
-        avai_num = len(avai_com)
-        idx = randint(1, avai_num)
-        self.confirmed_company = avai_com[idx - 1]
-        clients = sample(self.clients_dict[self.confirmed_company], self.guests)
+        self.avai_com()
 
-        for client in clients:
-            self.clients_str += client[1] + client[2] + client[0][0] + '总' +'，'
-        self.clients_str = self.clients_str[:-1]
+        random_com_obj = choice(self.avai_com_objs)  #  avai_com_objs is a list of objects, thus using choice here
+        self.confirmed_company = random_com_obj.company
+        client_objs = [client_obj for client_obj in ClientReim.objects.filter(company=random_com_obj)]
 
-        field = clients[0][-1]
-        idx = randint(1, len(field))
+        random_client_objs = sample(client_objs, self.guests)
+        print(random_client_objs)
+
+        # create a readable client string, for example, "投资部门+投资经理+王+总，"。
+
+        for client_obj in random_client_objs:
+            self.clients_str += client_obj.department + client_obj.position + client_obj.client + '总' + '，'
+        self.clients_str = self.clients_str[:-1]  # remove the last comma
+
+        last = FieldReim.objects.filter(company=random_com_obj).count() - 1
+        idx = randint(0, last)
+        random_field_obj = FieldReim.objects.filter(company=random_com_obj)[idx]
+        print(random_field_obj)
+
         #  texts prep for page display and attachment table population
-        self.field = "就" + field[idx - 1] + "进行洽谈"
+        self.field = "就" + random_field_obj.field + "进行洽谈"
         self.ave_amount = self.invoice_info['amount'] / self.diners
         self.amount_str = '{:,.2f}'.format(self.invoice_info['amount']) + "元"
         self.ave_amount_str = '{:,.2f}'.format(self.ave_amount) + "元"
@@ -106,40 +118,46 @@ class InvoiceReimburse:
         """
         if self.invoice_info['preset_number']:
             print('存在设定的用餐人数')
-            self.diners = self.invoice_info['preset_number']
+            self.diners = int(self.invoice_info['preset_number'])
         else:
             min_number = max(2, math.ceil(self.invoice_info['amount'] / (200*self.base_multiplpe)))
             max_number = min(max(2, int(self.invoice_info['amount'] // (140*self.base_multiplpe))), 6)
             self.diners = randint(min_number, max_number)
-            """
+
             print('不存在设定的用餐人数，自动产生用餐人数')
             print('最小人数：' + str(min_number))
             print('最大人数：' + str(max_number))
-            """
+
         # print('总人数：' + str(self.diners))
         self.hosts = randint(1, int(self.diners / 2))
         self.guests = self.diners - self.hosts
         # print('其中接待人数设置为: ' + str(self.hosts))
 
-
     def avai_com(self):
         """
         return available companies (companies that have more clients than guests)
         """
-        avai_com = []
+        print('self.avai_com starts')
+        coms_objs = CompanyReim.objects.all()
+        for com_obj in coms_objs:
+            #  what if add a field to CompanyReim to get the client number of the company
+            clients_objs = ClientReim.objects.filter(company=com_obj)
+            if len(clients_objs) >= self.guests:
+                self.avai_com_objs.append(com_obj)
+        print(self.avai_com_objs)
+        """
         for company, clients_in_a_company in self.clients_dict.items():
             clients_number_in_a_company = len(clients_in_a_company)
             if clients_number_in_a_company >= self.guests:
                 avai_com.append(company)
-        return avai_com
+        """
 
-    def unpack_excel(self):
-        """
-        create a clients dict from the standardised excel file, keys are companies, values are lists of clients,
-        with each item representing a client as a nested list, in which the items are names(str), department(str),
-        position(str) and field(list).
-        """
+    """
+    def clients_dict_gen(self):
+
         self.clients_dict = {}
+        all_companies = CompanyReim.objects.all()
+
         for row in tuple(self.ws.values)[1:]:
             name, depar, position, *field = row[1:]
             field = list(filter(None, field))
@@ -147,6 +165,7 @@ class InvoiceReimburse:
             if row[0] not in self.clients_dict.keys():
                 self.clients_dict[row[0]] = []
             self.clients_dict[row[0]].append([name, depar, position, field])
+    """
 
 if __name__ == '__main__':
     reim_input = {
