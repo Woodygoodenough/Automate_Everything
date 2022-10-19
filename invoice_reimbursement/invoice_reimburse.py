@@ -1,11 +1,14 @@
-# coding=GBK
+# coding=utf-8
 """
 This script is the prototype of invoice reimbursement automation for everbright trust
 """
+import os
 import math
 
 from random import randint, sample, choice
 from docx import Document
+from docx2pdf import convert
+
 from .models import CompanyReim, ClientReim, FieldReim
 
 
@@ -16,9 +19,9 @@ class InvoiceReimburse:
 
         #  set the multiple of average dining fee base based on dining type
         self.base_multiplpe_dict = {
-            '¹¤×÷ÕĞ´ı': 1,
-            'Ò»°ãÕĞ´ı': 2,
-            'ÉÌÎñÕĞ´ı': 3,
+            'å·¥ä½œæ‹›å¾…': 1,
+            'ä¸€èˆ¬æ‹›å¾…': 2,
+            'å•†åŠ¡æ‹›å¾…': 3,
         }
         self.base_multiplpe = self.base_multiplpe_dict[self.invoice_info['dining_type']]
 
@@ -33,8 +36,11 @@ class InvoiceReimburse:
         """
         generate the attachment file required
         """
-        file = "C:/Users/13554/OneDrive/pythonproject/Report_Automation/test_words/template¡¾·¢Æ±±¨Ïú¡¿.docx"
-        doc = Document(file)
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        print(base_dir)
+        file_name = 'templateã€å‘ç¥¨æŠ¥é”€ã€‘.docx'
+        template_path = base_dir + '/filesources/' + file_name
+        doc = Document(template_path)
         #  use docx to open an attachment template. There is a table inside. Populate the table with generated info.
         self.table = doc.tables[0]
         self.cell_manuver(0, 1, self.field)
@@ -46,7 +52,15 @@ class InvoiceReimburse:
         self.cell_manuver(4, 3, self.hosts_str)
         self.cell_manuver(5, 1, self.amount_str)
         self.cell_manuver(5, 3, self.ave_amount_str)
-        doc.save("C:/Users/13554/OneDrive/pythonproject/Report_Automation/test_words/¡¾·¢Æ±±¨Ïú¡¿Êä³ö.docx")
+        attach_name_docx = self.invoice_info['date'] + '-' + self.amount_str + '.docx'
+        attach_path_docx = base_dir + '/filedownload/' + attach_name_docx
+        doc.save(attach_path_docx)
+        # conver docx to pdf as attachment
+        attach_name = self.invoice_info['date'] + '-' + self.amount_str + '.pdf'
+        attach_path = base_dir + '/filedownload/' + attach_name
+        convert(attach_path_docx, attach_path)
+        os.remove(attach_path_docx)
+        return attach_name
 
     def cell_manuver(self, x, y, txt):
         """
@@ -70,34 +84,34 @@ class InvoiceReimburse:
         client_objs = [client_obj for client_obj in ClientReim.objects.filter(company=random_com_obj)]
 
         random_client_objs = sample(client_objs, self.guests)
-        print(random_client_objs)
+        # print(random_client_objs)
 
-        # create a readable client string, for example, "Í¶×Ê²¿ÃÅ+Í¶×Ê¾­Àí+Íõ+×Ü£¬"¡£
+        # create a readable client string, for example, "æŠ•èµ„éƒ¨é—¨+æŠ•èµ„ç»ç†+ç‹+æ€»ï¼Œ"ã€‚
 
         for client_obj in random_client_objs:
-            self.clients_str += client_obj.department + client_obj.position + client_obj.client + '×Ü' + '£¬'
+            self.clients_str += client_obj.department + client_obj.position + client_obj.client + 'æ€»' + 'ï¼Œ'
         self.clients_str = self.clients_str[:-1]  # remove the last comma
 
         last = FieldReim.objects.filter(company=random_com_obj).count() - 1
         idx = randint(0, last)
         random_field_obj = FieldReim.objects.filter(company=random_com_obj)[idx]
-        print(random_field_obj)
+        # print(random_field_obj)
 
         #  texts prep for page display and attachment table population
-        self.field = "¾Í" + random_field_obj.field + "½øĞĞÇ¢Ì¸"
+        self.field = "å°±" + random_field_obj.field + "è¿›è¡Œæ´½è°ˆ"
         self.ave_amount = self.invoice_info['amount'] / self.diners
-        self.amount_str = '{:,.2f}'.format(self.invoice_info['amount']) + "Ôª"
-        self.ave_amount_str = '{:,.2f}'.format(self.ave_amount) + "Ôª"
-        self.hosts_str = str(self.hosts) + "ÈË"
-        self.guests_str = str(self.guests) + "ÈË"
+        self.amount_str = '{:,.2f}'.format(self.invoice_info['amount']) + "å…ƒ"
+        self.ave_amount_str = '{:,.2f}'.format(self.ave_amount) + "å…ƒ"
+        self.hosts_str = str(self.hosts) + "äºº"
+        self.guests_str = str(self.guests) + "äºº"
         """
         print("________________________")
-        print("ÕĞ´ıµ¥Î»£º" + self.confirmed_company)
-        print("ÕĞ´ıÊÂÒË£º" + self.field)
-        print("ÕĞ´ıÈËÔ±£º" + self.clients_str)
-        print("½Ó´ıÈËÊı£º" + self.hosts_str + "£»ÕĞ´ıÈËÊı£º" + self.guests_str)
-        print("×Ü½ğ¶î £º" +  self.amount_str)
-        print("ÈË¾ù½ğ¶î£º" + self.ave_amount_str)
+        print("æ‹›å¾…å•ä½ï¼š" + self.confirmed_company)
+        print("æ‹›å¾…äº‹å®œï¼š" + self.field)
+        print("æ‹›å¾…äººå‘˜ï¼š" + self.clients_str)
+        print("æ¥å¾…äººæ•°ï¼š" + self.hosts_str + "ï¼›æ‹›å¾…äººæ•°ï¼š" + self.guests_str)
+        print("æ€»é‡‘é¢ ï¼š" +  self.amount_str)
+        print("äººå‡é‡‘é¢ï¼š" + self.ave_amount_str)
         print("________________________")
         """
 
@@ -117,34 +131,36 @@ class InvoiceReimburse:
         take in preset number of diners_num if there is any, and generate the number of diners for the hosts and guests
         """
         if self.invoice_info['preset_number']:
-            print('´æÔÚÉè¶¨µÄÓÃ²ÍÈËÊı')
+            # print('å­˜åœ¨è®¾å®šçš„ç”¨é¤äººæ•°')
             self.diners = int(self.invoice_info['preset_number'])
         else:
             min_number = max(2, math.ceil(self.invoice_info['amount'] / (200*self.base_multiplpe)))
             max_number = min(max(2, int(self.invoice_info['amount'] // (140*self.base_multiplpe))), 6)
             self.diners = randint(min_number, max_number)
 
-            print('²»´æÔÚÉè¶¨µÄÓÃ²ÍÈËÊı£¬×Ô¶¯²úÉúÓÃ²ÍÈËÊı')
-            print('×îĞ¡ÈËÊı£º' + str(min_number))
-            print('×î´óÈËÊı£º' + str(max_number))
+            """
+            print('ä¸å­˜åœ¨è®¾å®šçš„ç”¨é¤äººæ•°ï¼Œè‡ªåŠ¨äº§ç”Ÿç”¨é¤äººæ•°')
+            print('æœ€å°äººæ•°ï¼š' + str(min_number))
+            print('æœ€å¤§äººæ•°ï¼š' + str(max_number))
+            """
 
-        # print('×ÜÈËÊı£º' + str(self.diners))
+        # print('æ€»äººæ•°ï¼š' + str(self.diners))
         self.hosts = randint(1, int(self.diners / 2))
         self.guests = self.diners - self.hosts
-        # print('ÆäÖĞ½Ó´ıÈËÊıÉèÖÃÎª: ' + str(self.hosts))
+        # print('å…¶ä¸­æ¥å¾…äººæ•°è®¾ç½®ä¸º: ' + str(self.hosts))
 
     def avai_com(self):
         """
         return available companies (companies that have more clients than guests)
         """
-        print('self.avai_com starts')
+        # ('self.avai_com starts')
         coms_objs = CompanyReim.objects.all()
         for com_obj in coms_objs:
             #  what if add a field to CompanyReim to get the client number of the company
             clients_objs = ClientReim.objects.filter(company=com_obj)
             if len(clients_objs) >= self.guests:
                 self.avai_com_objs.append(com_obj)
-        print(self.avai_com_objs)
+        # print(self.avai_com_objs)
         """
         for company, clients_in_a_company in self.clients_dict.items():
             clients_number_in_a_company = len(clients_in_a_company)
@@ -170,10 +186,10 @@ class InvoiceReimburse:
 if __name__ == '__main__':
     reim_input = {
         'amount': 3000,
-        'restaurant': 'ºÃ³ÔµÄ²ÍÌü',
+        'restaurant': 'å¥½åƒçš„é¤å…',
         'date': '2022-10-07',
         'preset_number': None,
-        'dining_type': 'ÉÌÎñÕĞ´ı',
+        'dining_type': 'å•†åŠ¡æ‹›å¾…',
     }
     ir = InvoiceReimburse(reim_input)
     ir.who_to_dine()

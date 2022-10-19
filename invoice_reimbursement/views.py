@@ -1,7 +1,11 @@
 # coding=GBK
-from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
+import os
+import mimetypes
 from urllib.parse import urlencode, parse_qs
+from django.shortcuts import render, redirect
+from django.http import FileResponse
+from django.contrib.auth.decorators import login_required
+
 
 from .forms import AmountForm, RestaurantForm, DiningTypeForm, DateForm, PresetNumberForm, ConfirmForm
 from .invoice_reimburse import InvoiceReimburse
@@ -68,13 +72,24 @@ def reim_outcome(request, reim_input):
     ir = InvoiceReimburse(reim_input)
     context = ir.who_to_dine()
     if 'confirm_and_download' in request.POST:
-        ir.attachment_gen()
-        return render(request, 'reim/reim_download.html')
+        attach_name = ir.attachment_gen()
+        return redirect('invoice_reimbursement:reim_download', attach_name=attach_name)
     elif 'reroll_info' in request.POST:
         pass
     context['confirmation'] = ConfirmForm()
 
     return render(request, 'reim/reim_outcome.html', context)
+
+@login_required
+def attach_download(request, attach_name):
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    attach_path = base_dir + '/filedownload/' + attach_name
+    fl = open(attach_path, 'rb')
+    mime_type, _ = mimetypes.guess_type(attach_path)
+    response = FileResponse(fl)
+    response['Content-Type'] = mime_type
+    response['Content-Disposition'] = "attachment; filename=%s" % attach_name
+    return response
 
 """
 @login_required
